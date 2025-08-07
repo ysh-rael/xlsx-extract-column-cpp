@@ -48,7 +48,7 @@ cmake --build .
 ## 💡 Uso
 
 ```bash
-./xlsx-extract-column-cpp <arquivo.xlsx> <nome_da_coluna> [linha_do_título]
+./xlsx-extract-column-cpp <arquivo.xlsx> <titulo da coluna> <linha do título> <nome da planilha>
 ```
 
 ### Exemplo:

@@ -5,6 +5,10 @@
 #include <filesystem>
 #include "OpenXLSX.hpp"
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 using namespace OpenXLSX;
 namespace fs = std::filesystem;
 
@@ -22,15 +26,25 @@ std::string joinCSV(const std::vector<std::string> &values)
 
 int main(int argc, char *argv[])
 {
-    if (argc < 3 || argc > 4)
+#ifdef _WIN32
+    SetConsoleOutputCP(CP_UTF8);
+#endif
+
+    if (argc < 3 || argc > 5)
     {
-        std::cerr << "Uso: " << argv[0] << " <arquivo.xlsx> <titulo da coluna> [linha do título]\n";
+        std::cerr << "Uso: " << argv[0] << " <arquivo.xlsx> <titulo da coluna> [linha do título] [nome da planilha]\n";
         return 1;
     }
 
     std::string filePath = argv[1];
     std::string columnTitle = argv[2];
-    int titleRow = (argc == 4) ? std::stoi(argv[3]) : 1;
+    int titleRow = 1;
+    std::string sheetName;
+
+    if (argc >= 4)
+    {
+        titleRow = std::stoi(argv[3]);
+    }
 
     if (!fs::exists(filePath))
     {
@@ -42,8 +56,18 @@ int main(int argc, char *argv[])
     {
         XLDocument doc;
         doc.open(filePath);
+
         auto sheetNames = doc.workbook().worksheetNames();
-        auto sheet = doc.workbook().worksheet((argc > 3) ? argv[3] : sheetNames[0]);
+        if (argc == 5)
+        {
+            sheetName = argv[4];
+        }
+        else
+        {
+            sheetName = sheetNames[0]; // pega a primeira planilha
+        }
+
+        auto sheet = doc.workbook().worksheet(sheetName);
 
         // Encontrar o índice da coluna com o título desejado
         int columnIndex = -1;
@@ -63,7 +87,7 @@ int main(int argc, char *argv[])
 
         if (columnIndex == -1)
         {
-            std::cerr << "Coluna '" << columnTitle << "' não encontrada.\n";
+            std::cerr << "Coluna '" << columnTitle << "' não encontrada na linha " << titleRow << ".\n";
             return 1;
         }
 
@@ -81,7 +105,6 @@ int main(int argc, char *argv[])
 
         std::cout << joinCSV(values) << std::endl;
 
-        doc.close();
     }
     catch (const std::exception &e)
     {
